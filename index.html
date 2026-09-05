@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Muro de la Paz</title>
+
+<style>
+  /* ============================================================
+     RESET Y VARIABLES
+     ============================================================ */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-top:     #eaf6fb;
+    --bg-bottom:  #eef8f0;
+    --ink:        #33505a;
+    --ink-soft:   #6f8b93;
+    --accent:     #6fb98f;
+    --accent-hov: #5da97d;
+    --card-line:  rgba(51, 80, 90, 0.08);
+  }
+
+  body {
+    min-height: 100vh;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background: linear-gradient(160deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 1.25rem 4rem;
+  }
+
+  /* ============================================================
+     HEADER
+     ============================================================ */
+  header {
+    max-width: 560px;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  header h1 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    margin-bottom: 0.6rem;
+  }
+
+  header p {
+    color: var(--ink-soft);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  /* ============================================================
+     FORMULARIO (COMPOSITOR DE NOTAS)
+     ============================================================ */
+  .composer {
+    width: 100%;
+    max-width: 560px;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 1.25rem;
+    box-shadow: 0 10px 30px rgba(51, 80, 90, 0.08);
+    margin-bottom: 2.5rem;
+  }
+
+  .composer textarea {
+    width: 100%;
+    resize: none;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 1rem;
+    color: var(--ink);
+    line-height: 1.5;
+    min-height: 4.5rem;
+  }
+
+  .composer textarea::placeholder {
+    color: #a9bdc3;
+  }
+
+  .composer-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--card-line);
+  }
+
+  .char-count {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+
+  .btn-publish {
+    border: none;
+    background: var(--accent);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.65rem 1.6rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .btn-publish:hover {
+    background: var(--accent-hov);
+    transform: translateY(-1px);
+  }
+
+  /* ============================================================
+     CONTADOR Y MURO
+     ============================================================ */
+  .wall-meta {
+    width: 100%;
+    max-width: 900px;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    margin-bottom: 1rem;
+    padding: 0 0.25rem;
+  }
+
+  .wall {
+    width: 100%;
+    max-width: 900px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2.5rem 1rem;
+    border: 2px dashed var(--card-line);
+    border-radius: 16px;
+    color: var(--ink-soft);
+  }
+
+  /* ============================================================
+     TARJETA DE NOTA
+     ============================================================ */
+  .note {
+    position: relative;
+    padding: 1.1rem 1.1rem 0.9rem;
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(51, 80, 90, 0.10);
+    font-size: 0.95rem;
+    line-height: 1.45;
+    word-wrap: break-word;
+    animation: note-in 0.35s ease;
+  }
+
+  .note p {
+    margin-bottom: 1rem;
+  }
+
+  .note-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: rgba(51, 80, 90, 0.55);
+  }
+
+  .note-delete {
+    border: none;
+    background: transparent;
+    color: rgba(51, 80, 90, 0.45);
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.15rem 0.4rem;
+    border-radius: 6px;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .note-delete:hover {
+    background: rgba(51, 80, 90, 0.08);
+    color: var(--ink);
+  }
+
+  /* Único momento de movimiento: la nota entra cuando se publica */
+  @keyframes note-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .note { animation: none; }
+  }
+</style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Muro de la Paz</h1>
+    <p>Comparte una acción positiva que hiciste hoy para construir paz. Al enviarla, se suma al instante al muro de la clase.</p>
+  </header>
+
+  <form class="composer" id="noteForm">
+    <textarea
+      id="noteInput"
+      maxlength="180"
+      placeholder="Hoy construí paz cuando..."
+      required
+    ></textarea>
+    <div class="composer-footer">
+      <span class="char-count" id="charCount">180 caracteres disponibles</span>
+      <button type="submit" class="btn-publish">Publicar en el muro</button>
+    </div>
+  </form>
+
+  <p class="wall-meta" id="wallMeta"></p>
+  <section class="wall" id="wall"></section>
+
+<script>
+  // ==============================================================
+  // REFERENCIAS AL DOM
+  // ==============================================================
+  const noteForm  = document.getElementById('noteForm');
+  const noteInput = document.getElementById('noteInput');
+  const charCount = document.getElementById('charCount');
+  const wall      = document.getElementById('wall');
+  const wallMeta  = document.getElementById('wallMeta');
+
+  const STORAGE_KEY = 'muroDeLaPazNotes';
+  const MAX_CHARS   = 180;
+
+  // Colores pastel que rotan para diferenciar las notas visualmente
+  const CARD_COLORS = ['#fff3bf', '#ffe0e6', '#d8f3ff', '#e4dcf9', '#d7f5df'];
+
+  // ==============================================================
+  // PERSISTENCIA (LocalStorage)
+  // Nota: localStorage funciona con normalidad al abrir este
+  // archivo directamente en un navegador o al alojarlo en un
+  // servidor propio. Si lo previsualizas dentro de un entorno
+  // de vista previa embebido (como algunos editores online),
+  // el navegador puede bloquearlo por seguridad y las notas solo
+  // durarán mientras la pestaña siga abierta.
+  // ==============================================================
+  function loadNotes() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (err) {
+      // Si localStorage no está disponible, seguimos solo en memoria
+      return [];
+    }
+  }
+
+  function saveNotes(notes) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+    } catch (err) {
+      // Falla silenciosa: la sesión sigue funcionando sin persistencia
+    }
+  }
+
+  let notes = loadNotes();
+
+  // ==============================================================
+  // RENDERIZADO DEL MURO
+  // ==============================================================
+  function formatTimestamp(iso) {
+    const date = new Date(iso);
+    return date.toLocaleString('es-MX', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  function renderWallMeta() {
+    if (notes.length === 0) {
+      wallMeta.textContent = '';
+      return;
+    }
+    const palabra = notes.length === 1 ? 'acción de paz compartida' : 'acciones de paz compartidas';
+    wallMeta.textContent = `${notes.length} ${palabra}`;
+  }
+
+  function createNoteElement(note, index) {
+    const card = document.createElement('article');
+    card.className = 'note';
+    card.style.background = CARD_COLORS[index % CARD_COLORS.length];
+
+    const text = document.createElement('p');
+    text.textContent = note.text; // textContent evita inyección de HTML
+
+    const footer = document.createElement('div');
+    footer.className = 'note-footer';
+
+    const time = document.createElement('span');
+    time.textContent = formatTimestamp(note.timestamp);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'note-delete';
+    deleteBtn.type = 'button';
+    deleteBtn.setAttribute('aria-label', 'Quitar nota del muro');
+    deleteBtn.textContent = '✕';
+    deleteBtn.addEventListener('click', () => deleteNote(note.id));
+
+    footer.appendChild(time);
+    footer.appendChild(deleteBtn);
+    card.appendChild(text);
+    card.appendChild(footer);
+
+    return card;
+  }
+
+  function renderWall() {
+    wall.innerHTML = '';
+
+    if (notes.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = 'El muro está vacío. Sé el primero en compartir una acción de paz.';
+      wall.appendChild(empty);
+      renderWallMeta();
+      return;
+    }
+
+    // Las notas más recientes se muestran primero
+    notes
+      .slice()
+      .reverse()
+      .forEach((note, i) => wall.appendChild(createNoteElement(note, i)));
+
+    renderWallMeta();
+  }
+
+  // ==============================================================
+  // ACCIONES: publicar y eliminar
+  // ==============================================================
+  function addNote(text) {
+    const newNote = {
+      id: Date.now(),
+      text: text,
+      timestamp: new Date().toISOString()
+    };
+    notes.push(newNote);
+    saveNotes(notes);
+    renderWall();
+  }
+
+  function deleteNote(id) {
+    notes = notes.filter((n) => n.id !== id);
+    saveNotes(notes);
+    renderWall();
+  }
+
+  // ==============================================================
+  // EVENTOS
+  // ==============================================================
+  noteForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const text = noteInput.value.trim();
+    if (!text) return;
+
+    addNote(text);
+    noteInput.value = '';
+    charCount.textContent = `${MAX_CHARS} caracteres disponibles`;
+  });
+
+  noteInput.addEventListener('input', () => {
+    const remaining = MAX_CHARS - noteInput.value.length;
+    charCount.textContent = `${remaining} caracteres disponibles`;
+  });
+
+  // ==============================================================
+  // ESTADO INICIAL
+  // ==============================================================
+  renderWall();
+</script>
+
+</body>
+</html>
