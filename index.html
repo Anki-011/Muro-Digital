@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Muro de la Paz</title>
- 
+
 <style>
   /* ============================================================
      RESET Y VARIABLES
      ============================================================ */
   * { margin: 0; padding: 0; box-sizing: border-box; }
- 
+
   :root {
     --bg-top:     #eaf6fb;
     --bg-bottom:  #eef8f0;
@@ -21,7 +21,7 @@
     --card-line:  rgba(51, 80, 90, 0.08);
     --warn:       #c47a3f;
   }
- 
+
   body {
     min-height: 100vh;
     font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -32,7 +32,7 @@
     align-items: center;
     padding: 2.5rem 1.25rem 4rem;
   }
- 
+
   /* ============================================================
      HEADER
      ============================================================ */
@@ -41,20 +41,20 @@
     text-align: center;
     margin-bottom: 2rem;
   }
- 
+
   header h1 {
     font-size: 2.1rem;
     font-weight: 700;
     letter-spacing: 0.2px;
     margin-bottom: 0.6rem;
   }
- 
+
   header p {
     color: var(--ink-soft);
     font-size: 1rem;
     line-height: 1.5;
   }
- 
+
   /* Aviso de configuración pendiente de Firebase */
   .setup-warning {
     max-width: 560px;
@@ -68,7 +68,7 @@
     margin-bottom: 1.5rem;
     display: none; /* se muestra solo si falta configurar firebaseConfig */
   }
- 
+
   /* ============================================================
      FORMULARIO (COMPOSITOR DE NOTAS)
      ============================================================ */
@@ -81,7 +81,7 @@
     box-shadow: 0 10px 30px rgba(51, 80, 90, 0.08);
     margin-bottom: 2.5rem;
   }
- 
+
   .composer textarea {
     width: 100%;
     resize: none;
@@ -93,11 +93,11 @@
     line-height: 1.5;
     min-height: 4.5rem;
   }
- 
+
   .composer textarea::placeholder {
     color: #a9bdc3;
   }
- 
+
   .composer-footer {
     display: flex;
     align-items: center;
@@ -106,12 +106,12 @@
     padding-top: 0.75rem;
     border-top: 1px solid var(--card-line);
   }
- 
+
   .char-count {
     font-size: 0.8rem;
     color: var(--ink-soft);
   }
- 
+
   .btn-publish {
     border: none;
     background: var(--accent);
@@ -123,17 +123,17 @@
     cursor: pointer;
     transition: background 0.2s ease, transform 0.2s ease;
   }
- 
+
   .btn-publish:hover:not(:disabled) {
     background: var(--accent-hov);
     transform: translateY(-1px);
   }
- 
+
   .btn-publish:disabled {
     background: #cfd8dc;
     cursor: not-allowed;
   }
- 
+
   /* ============================================================
      CONTADOR Y MURO
      ============================================================ */
@@ -145,7 +145,7 @@
     margin-bottom: 1rem;
     padding: 0 0.25rem;
   }
- 
+
   .wall {
     width: 100%;
     max-width: 900px;
@@ -153,7 +153,7 @@
     grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
     gap: 1.25rem;
   }
- 
+
   .empty-state {
     grid-column: 1 / -1;
     text-align: center;
@@ -162,7 +162,7 @@
     border-radius: 16px;
     color: var(--ink-soft);
   }
- 
+
   /* ============================================================
      TARJETA DE NOTA
      ============================================================ */
@@ -176,11 +176,11 @@
     word-wrap: break-word;
     animation: note-in 0.35s ease;
   }
- 
+
   .note p {
     margin-bottom: 1rem;
   }
- 
+
   .note-footer {
     display: flex;
     align-items: center;
@@ -188,29 +188,46 @@
     font-size: 0.75rem;
     color: rgba(51, 80, 90, 0.55);
   }
- 
+
+  .note-delete {
+    border: none;
+    background: transparent;
+    color: rgba(51, 80, 90, 0.45);
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.15rem 0.4rem;
+    border-radius: 6px;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .note-delete:hover {
+    background: rgba(51, 80, 90, 0.08);
+    color: var(--ink);
+  }
+
   @keyframes note-in {
     from { opacity: 0; transform: translateY(10px) scale(0.97); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
- 
+
   @media (prefers-reduced-motion: reduce) {
     .note { animation: none; }
   }
 </style>
 </head>
- 
+
 <body>
- 
+
   <header>
     <h1>Muro de la Paz</h1>
     <p>Comparte una acción positiva que hiciste hoy para construir paz. Al enviarla, se suma al instante al muro de toda la clase.</p>
   </header>
- 
+
   <div class="setup-warning" id="setupWarning">
     ⚠️ Este muro todavía no está conectado a Firebase. Reemplaza el objeto <code>firebaseConfig</code> en el código con el de tu propio proyecto para que las notas se compartan entre dispositivos.
   </div>
- 
+
   <form class="composer" id="noteForm">
     <textarea
       id="noteInput"
@@ -220,29 +237,32 @@
     ></textarea>
     <div class="composer-footer">
       <span class="char-count" id="charCount">180 caracteres disponibles</span>
-      <button type="submit" class="btn-publish" id="publishBtn">Publicar en el muro</button>
+      <button type="submit" class="btn-publish" id="publishBtn" disabled>Publicar en el muro</button>
     </div>
   </form>
- 
+
   <p class="wall-meta" id="wallMeta">Conectando con el muro...</p>
   <section class="wall" id="wall"></section>
- 
+
 <script type="module">
   // ==============================================================
   // FIREBASE — almacenamiento compartido en tiempo real
   // ==============================================================
   // 1) Crea un proyecto gratis en https://console.firebase.google.com
-  // 2) Registra una "app web" dentro del proyecto y copia el objeto
-  //    de configuración que Firebase te entrega.
+  // 2) Registra una "app web" y copia el objeto de configuración.
   // 3) Pégalo aquí abajo, reemplazando estos valores de ejemplo.
   // 4) Activa Firestore Database en modo de prueba.
+  // 5) Activa Authentication → Sign-in method → Anonymous.
   // ==============================================================
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
     getFirestore, collection, addDoc, onSnapshot,
-    query, orderBy, serverTimestamp
+    query, orderBy, deleteDoc, doc, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
- 
+  import {
+    getAuth, signInAnonymously, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
   const firebaseConfig = {
     apiKey: "AIzaSyBT_5OQbOzi_U4RHdksRhd1BtDs4icj0Fw",
     authDomain: "mural-digital-anki011.firebaseapp.com",
@@ -251,9 +271,9 @@
     messagingSenderId: "544432496847",
     appId: "1:544432496847:web:388a293233237a4f7b57ba"
   };
- 
+
   const IS_CONFIGURED = firebaseConfig.apiKey !== "TU_API_KEY";
- 
+
   // ==============================================================
   // REFERENCIAS AL DOM
   // ==============================================================
@@ -264,49 +284,66 @@
   const wall         = document.getElementById('wall');
   const wallMeta     = document.getElementById('wallMeta');
   const setupWarning = document.getElementById('setupWarning');
- 
+
   const MAX_CHARS = 180;
   const CARD_COLORS = ['#fff3bf', '#ffe0e6', '#d8f3ff', '#e4dcf9', '#d7f5df'];
- 
+
+  // uid del dispositivo actual (se llena tras el login anónimo);
+  // solo las notas cuyo campo "uid" coincida muestran botón de borrar.
+  let currentUid = null;
+
   if (!IS_CONFIGURED) {
-    // Sin configuración real de Firebase, avisamos y detenemos aquí.
     setupWarning.style.display = 'block';
     wallMeta.textContent = '';
     wall.innerHTML = '<div class="empty-state">Configura Firebase para activar el muro compartido.</div>';
-    publishBtn.disabled = true;
   } else {
     initWall();
   }
- 
+
   function initWall() {
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
+    const auth = getAuth(app);
     const notesRef = collection(db, "notas-paz");
     const notesQuery = query(notesRef, orderBy("timestamp", "desc"));
- 
+
     // --------------------------------------------------------------
-    // Escucha en tiempo real: cualquier nota que cualquier persona
-    // publique se refleja al instante en todas las pantallas abiertas.
+    // Identidad silenciosa por dispositivo (sin pantalla de login).
+    // Solo sirve para saber "esta nota es mía", no identifica a la
+    // persona ante nadie más.
     // --------------------------------------------------------------
-    onSnapshot(notesQuery, (snapshot) => {
-      const notes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-      renderWall(notes);
-    }, (error) => {
-      console.error('Error al conectar con Firestore:', error);
+    onAuthStateChanged(auth, (user) => {
+      if (!user) return; // aún esperando a que termine signInAnonymously
+      currentUid = user.uid;
+      publishBtn.disabled = false;
+
+      // Empezamos a escuchar el muro solo una vez que ya sabemos
+      // quiénes somos, para poder marcar nuestras propias notas.
+      onSnapshot(notesQuery, (snapshot) => {
+        const notes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        renderWall(notes);
+      }, (error) => {
+        console.error('Error al conectar con Firestore:', error);
+        wallMeta.textContent = 'No se pudo conectar con el muro compartido.';
+      });
+    });
+
+    signInAnonymously(auth).catch((err) => {
+      console.error('Error de autenticación anónima:', err);
       wallMeta.textContent = 'No se pudo conectar con el muro compartido.';
     });
- 
+
     // --------------------------------------------------------------
     // Publicar nota
     // --------------------------------------------------------------
     noteForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       const text = noteInput.value.trim();
-      if (!text) return;
- 
+      if (!text || !currentUid) return;
+
       publishBtn.disabled = true;
       try {
-        await addDoc(notesRef, { text, timestamp: serverTimestamp() });
+        await addDoc(notesRef, { text, timestamp: serverTimestamp(), uid: currentUid });
         noteInput.value = '';
         charCount.textContent = `${MAX_CHARS} caracteres disponibles`;
       } catch (err) {
@@ -316,8 +353,21 @@
         publishBtn.disabled = false;
       }
     });
+
+    // --------------------------------------------------------------
+    // Eliminar nota (solo funciona con las propias, por las reglas
+    // de Firestore)
+    // --------------------------------------------------------------
+    window.__deleteNote = async (id) => {
+      try {
+        await deleteDoc(doc(db, "notas-paz", id));
+      } catch (err) {
+        console.error('Error al eliminar la nota:', err);
+        alert('No se pudo borrar la nota.');
+      }
+    };
   }
- 
+
   // ==============================================================
   // RENDERIZADO DEL MURO
   // ==============================================================
@@ -325,38 +375,49 @@
     const remaining = MAX_CHARS - noteInput.value.length;
     charCount.textContent = `${remaining} caracteres disponibles`;
   });
- 
+
   function formatTimestamp(ts) {
-    if (!ts) return 'enviando...'; // aún sincronizando con el servidor
+    if (!ts) return 'enviando...';
     const date = ts.toDate();
     return date.toLocaleString('es-MX', {
       day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
     });
   }
- 
+
   function createNoteElement(note, index) {
     const card = document.createElement('article');
     card.className = 'note';
     card.style.background = CARD_COLORS[index % CARD_COLORS.length];
- 
+
     const text = document.createElement('p');
     text.textContent = note.text; // textContent evita inyección de HTML
- 
+
     const footer = document.createElement('div');
     footer.className = 'note-footer';
- 
+
     const time = document.createElement('span');
     time.textContent = formatTimestamp(note.timestamp);
- 
     footer.appendChild(time);
+
+    // El botón de borrar solo aparece en las notas propias de este dispositivo
+    if (note.uid && note.uid === currentUid) {
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'note-delete';
+      deleteBtn.type = 'button';
+      deleteBtn.setAttribute('aria-label', 'Quitar mi nota del muro');
+      deleteBtn.textContent = '✕';
+      deleteBtn.addEventListener('click', () => window.__deleteNote(note.id));
+      footer.appendChild(deleteBtn);
+    }
+
     card.appendChild(text);
     card.appendChild(footer);
     return card;
   }
- 
+
   function renderWall(notes) {
     wall.innerHTML = '';
- 
+
     if (notes.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'empty-state';
@@ -365,13 +426,13 @@
       wallMeta.textContent = '';
       return;
     }
- 
+
     notes.forEach((note, i) => wall.appendChild(createNoteElement(note, i)));
- 
+
     const palabra = notes.length === 1 ? 'acción de paz compartida' : 'acciones de paz compartidas';
     wallMeta.textContent = `${notes.length} ${palabra}`;
   }
 </script>
- 
+
 </body>
 </html>
